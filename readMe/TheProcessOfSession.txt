@@ -1,0 +1,104 @@
+In node js:
+
+1. First the user have to register, and by using body parser you can get the 
+information in the form, then hash the password by using bcrypt library
+and store them in the database.
+
+2. When a user login you have to use client-session library, first make it a
+middleware:
+const session = require("client-session");
+app.use(session({
+  CookieName: "session",
+  secret: "your password for your app",
+  duration: 30 * 60 * 1000,
+  activeDuration: 5 * 60 * 1000,
+  httpOnly: true, // don't let js code access cookie
+  secure: true, // only set cookie over https
+  ephemeral: true // destroy cookies when the browser closes
+}));
+client-session makes the req.session property.
+then when a user login you have to put the userId in the req.session.userId:
+	req.session.userId = user._id;
+
+  
+	
+3. When a user request to a certain page check for the existence of the 
+req.session and req.session.userId, and check if the user is exist or you can 
+use smart middleware for every request:
+
+app.use((req, res, next) => {
+  if(!(req.session && req.session.userId)){
+    return next();
+  }
+  User.findById(req.sessio.userId, (err, user) => {
+    if(err){
+      return next();
+    }
+    if(!user){
+      return next();
+    }
+    user.password = undefined;
+    req.user = user;
+    res.locals.user = user;
+  })
+})
+function IsLoginRequire(req, res, next){
+  if(!req.user){
+    return res.redirect("/login");
+  }
+  next();
+}
+
+app.get("/dashboard", IsLoginRequire, (req, res, next)=>{
+  res.render("dashboard");
+})
+
+
+
+
+
+/////hashing algorithms:
+md5     shit
+sha256  Nope
+bcrypt  Safe
+scrypt  Awesome
+argon2  Yes
+
+you have to know two things about these algorithms:
+  a. If you hash a certain password you always get certain random string
+  b. that's the one way function you can't decode it. 
+
+
+/////// CSRF attacks /////
+
+1. a friend sends you an email an in that email there is 
+<img src="http://bank.com/withdraw?account=Randal&amount=10000&for=badguy">
+and this email use your cookie to send the money to another one.
+
+There is 4 process for securing against CSRF attacks:
+  a. generate random token every time a request made
+  b. send that token in the cookie and to the every page that has html forms
+  c. and send that token with hidden input 
+  d. check that if that send token is the same in the cookie
+
+  npm install csurf
+  const csurf = require("csurf");
+
+  app.use(csurf);
+  app.get("/register", (req, res) => {
+    res.render("register", {csrToken: req.csrfToken()});
+  });
+
+  app.get("login", (req, res) => {
+    res.render("login", {csrToken: req.csrfToken()});
+  });
+
+  form(method="post")
+  input(type="hidden" name="_csrf", value=csrfToken)
+
+
+///// Popular libraries ////
+a. Passport
+b. Node-login
+c. Aqua
+d. Okta
