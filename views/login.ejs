@@ -1,3 +1,11 @@
+<% 
+  if (typeof error === 'undefined') {
+    error = '';
+  }
+  if(typeof email === 'undefined'){
+    email = '';
+  }
+%>
 <html lang="en">
 <head><!-- font awesome -->
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
@@ -15,9 +23,9 @@
     <h1>Login</h1>
     <div class="row">
       <% if(error) { %>
-      <div class="col s8 offset-s2 red-text left-align">
-        * <%= error %>
-      </div>
+        <div class="col s8 offset-s2 red-text left-align">
+          * <%= error %>
+        </div>
       <% } %>
     </div>
     <div class="row">

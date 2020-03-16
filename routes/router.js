@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const bycrypt = require('bcryptjs');
 
 // homepage
 router.get('/', (req, res) => {
@@ -10,10 +11,15 @@ router.get('/', (req, res) => {
 
 // register
 router.get('/register', (req, res) => {
-  res.render('register');
+  let user = new User();
+  res.render('register', {
+    user: user 
+  });
 });
 
 router.post('/register', async function(req, res) {
+  let hash = bycrypt.hashSync(req.body.password);
+  req.body.password = hash;
   let user = new User(req.body);
   let error = '';
   try{
@@ -31,7 +37,7 @@ router.post('/register', async function(req, res) {
   }
   res.redirect('/dashboard');
 
-})
+});
 
 // login
 router.get('/login', (req, res) => {
@@ -39,30 +45,38 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-
   let user;
   try {
     user = await User.findOne({
       email: req.body.email
     });
-    if(!user || req.body.password !== user.password){
+    // checking user and password
+    if(!user || !bycrypt.compareSync(req.body.password, user.password)){
       return res.render('login', {
         error: 'Check email and password',
         email: req.body.email
       });
     }
-    
   } catch(err) {
     return res.render("login", {
-      error: 'Check email and password',
+      error: 'problem with database',
       email: req.body.email
     });
   }
+  // if there is user 
+  req.session.userId = user._id;
   res.redirect("/dashboard");
 });
 
 // dashboard
-router.get('/dashboard', (req, res) => {
+function isLoginRequired(req, res, next) {
+  if(!req.user) {
+    return res.redirect('/login');
+  }
+  next();
+}
+router.get('/dashboard', isLoginRequired, async (req, res, next) => {
+  
   res.render('dashboard');
 });
 

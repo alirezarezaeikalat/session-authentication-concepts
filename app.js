@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const sessions = require('client-sessions');
 const routes = require('./routes/router');
 const bodyParser = require('body-parser');
+const passwords = require('./config/secrets');
+const User = require('./models/User');
 
 const app = express();
 
@@ -19,6 +21,35 @@ app.use(bodyParser.urlencoded({
 }));
 
 // using sessions
+app.use(sessions({
+  cookieName: "session",
+  secret: passwords.session,
+  duration: 30 * 60 * 1000,
+  httpOnly: true, // don't let js code access cookie
+  secure: true // only set cookie over https
+}));
+
+// smart user middleware
+app.use(async(req, res, next) => {
+  let user;
+  if(!(req.session && req.session.userId)){
+    return next();
+  }
+  try {
+    user = await User.findById(req.session.userId);
+    if(!user) {
+      return next();
+    }
+  } catch(err) {
+    return next(err);
+  }
+  user.password = undefined;
+  req.user = user;
+  res.locals.user = user;
+  next();
+})
+
+// using routing
 app.use(routes);
 
 
