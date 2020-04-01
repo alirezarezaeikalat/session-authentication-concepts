@@ -15,16 +15,17 @@ app.use(session({
   httpOnly: true, // don't let js code access cookie
   secure: true, // only set cookie over https
   ephemeral: true // destroy cookies when the browser closes
+  sameSite: strict
 }));
-client-session makes the req.session property.
+client-session makes the req.session property and save it in local storage.
 then when a user login you have to put the userId in the req.session.userId:
 	req.session.userId = user._id;
 
   
 	
 3. When a user request to a certain page check for the existence of the 
-req.session and req.session.userId, and check if the user is exist or you can 
-use smart middleware for every request:
+req.session and req.session.userId, and check if the user is exist for every request
+or you can use smart middleware :
 
 app.use((req, res, next) => {
   if(!(req.session && req.session.userId)){
@@ -40,7 +41,8 @@ app.use((req, res, next) => {
     user.password = undefined;
     req.user = user;
     res.locals.user = user;
-  })
+    next()
+  });
 })
 function IsLoginRequire(req, res, next){
   if(!req.user){
