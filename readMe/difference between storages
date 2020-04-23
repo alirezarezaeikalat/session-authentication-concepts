@@ -1,0 +1,13 @@
+                      Cookies           Local Storage         Session Storage
+
+Capacity                4kb                 10mb                    5mb
+
+Browser              HTML4/HTML5            HTML5                  HTML5
+
+Accessible from       Any window           Any window             Same tab
+
+Expires               Mannually set          Never               On tab close
+
+Storage Location    Browser and server      Browser only         Browser only
+                      
+Sent with requests        Yes                  NO                     NO
