@@ -1,3 +1,5 @@
+                                      (localstorage and session Storage are some how like
+                                        each other)
                       Cookies           Local Storage         Session Storage
 
 Capacity                4kb                 10mb                    5mb
@@ -8,6 +10,6 @@ Accessible from       Any window           Any window             Same tab
 
 Expires               Mannually set          Never               On tab close
 
-Storage Location    Browser and server      Browser only         Browser only
+Storage Location    Browser and server     Browser only          Browser only
                       
-Sent with requests        Yes                  NO                     NO
+Sent with requests        Yes                  No                     No

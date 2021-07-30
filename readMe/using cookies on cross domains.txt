@@ -1,0 +1,19 @@
+1. There is scenario, when you have identity server, and multiple domain that using the same identity server for identication:
+    in this case, using a cookie is somehow different: 
+
+
+      use case: 
+
+
+        a. user log in in www.myarman.com
+
+
+        b. www. is just a static website, and redirect you to authentication server www.identity.myarman.com
+
+        c. user login in the authentication server
+
+        d. the www.identity.myarman.com generates a cookie and issue it in your browser, then make a JWT for 10 second,
+            
+            and redirect you to www.dashbord.myarman.com?<created jwt>
+
+        e. the address will get the token, and issue another cookie for this website
