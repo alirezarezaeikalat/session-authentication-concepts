@@ -1,3 +1,109 @@
+//////// oauth book //////////////
+1. in OAuth, the end user delegates some part of their authority to access the protected resource to the client application to act
+on their behalf. To make that happen, OAuth introduces another component into the system: the --authorization server--.
+
+2. The authorization server (AS) is trusted by the protected resource to issue special purpose security credentials—called --OAuth access tokens--`to clients.
+
+3. Tokens are heart of the OAuth 2.0 protocol
+
+    a. The Resource Owner indicates to the Client that they would like the Client to act on their behalf (for example, “Go load my photos from that service so I can
+        print them”).
+    b. The Client requests authorization from the Resource Owner at the Authorization Server.
+    c. The Resource Owner grants authorization to the Client.
+    d. The Client receives a Token from the Authorization Server.
+    e. The Client presents the Token to the Protected Resource.
+
+4. Following an OAuth 2.0 authorization grant in detail:
+
+
+    a.  a web client, this takes the form of an HTTP redirect to the authorization server’s --authorization endpoint--:
+
+            HTTP/1.1 302 Moved Temporarily
+            x-powered-by: Express
+            Location: http://localhost:9001/authorize?response_type=code&scope=foo&client
+            _id=oauth-client-1&redirect_uri=http%3A%2F%2Flocalhost%3A9000%2Fcallback&
+            state=Lwt50DDQKUB8U7jtfLQCVGDL9cnmwHH1
+            Vary: Accept
+            Content-Type: text/html; charset=utf-8
+            Content-Length: 444
+            Date: Fri, 31 Jul 2015 20:50:19 GMT
+            Connection: keep-alive
+
+            [ATTENTION]
+            pay attention to: 
+            
+            --response_type=code--, (defines the --authorization grant-- or oauth flow, here the authorization grant is authorization code)
+            --scope= -- : The client’s request can include an indication of what kind of access it’s looking for (known as the OAuth scope)
+            --client_id= --,
+            --redirect_uri= --,
+            --state= --
+    
+    b. This redirect to the browser causes the browser to send an HTTP GET to the authorization server endpoint:
+
+            GET /authorize?response_type=code&scope=foo&client_id=oauth-client
+            -1&redirect_uri=http%3A%2F%2Flocalhost%3A9000%
+            2Fcallback&state=Lwt50DDQKUB8U7jtfLQCVGDL9cnmwHH1 HTTP/1.1
+            Host: localhost:9001
+            User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:39.0)
+            Gecko/20100101 Firefox/39.0
+            Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+            Referer: http://localhost:9000/
+            Connection: keep-alive
+
+    c. Next, the authorization server will usually require the user to authenticate, The user’s authentication passes directly between the user (and their browser) and
+        the authorization server; it’s never seen by the client application. The authorization server is free to use any authentication method.
+    
+    d. HTTP 302 Found
+        Location: http://localhost:9000/oauth_callback?code=8V1pr0rJ&state=Lwt50DDQKU
+        B8U7jtfLQCVGDL9cnmwHH1
+    
+    e. This in turn causes the browser to issue the following request back to the client:
+        GET /callback?code=8V1pr0rJ&state=Lwt50DDQKUB8U7jtfLQCVGDL9cnmwHH1 HTTP/1.1
+        Host: localhost:9000
+
+        [ATTENTION]
+        We get this code, since we are using authorization code grant type (--response_type=code)
+
+
+
+    f. Now that the client has the code, it can send it back to the authorization server on its --token endpoint--
+
+        POST /token
+        Host: localhost:9001
+        Accept: application/json
+        Content-type: application/x-www-form-encoded
+        Authorization: Basic b2F1dGgtY2xpZW50LTE6b2F1dGgtY2xpZW50LXNlY3JldC0x
+        grant_type=authorization_code&
+        redirect_uri=http%3A%2F%2Flocalhost%3A9000%2Fcallback&code=8V1pr0rJ
+
+
+
+    g. The authorization server takes in this request and, if valid, --issues a token--.
+        The authorization server performs a number of steps to ensure the request is legitimate: 
+            
+            a. First, it validates the client’s credentials (passed in the Authorization header here) to determine which client is requesting access.
+            b. it reads the value of the code parameter from the body and looks up any information it has about that authorization code, including which client made the 
+                initial authorization request, which user authorized it, and what it was authorized for. If the authorization code is valid, has not
+                been used previously, and the client making this request is the same as the client that made the original request, the authorization server generates 
+                and returns a new access token for the client.
+
+        This token is returned in the HTTP response as a JSON object. The response can also include a
+        refresh token (used to get new access tokens without asking for authorization again)
+       
+        HTTP 200 OK
+        Date: Fri, 31 Jul 2015 21:19:03 GMT
+        Content-type: application/json
+        {
+        “access_token”: “987tghjkiu6trfghjuytrghj”,
+        “token_type”: “Bearer”
+        }
+
+
+
+
+
+
+
 1. pattern for using oauth:     (Delegated authorization)
 
     yelp(example of app)            ----->                  accounts.google.com    

@@ -11,7 +11,7 @@
 3. Flow of session(stateful):
 	1. user submit login credential (e.g. email and password)
 	2. server verifies the credentials against DB
-	3. server create temp user session (typically is a string)
+	3. server create temp user session in session store (typically is a string)
 	4. server put session id into cookie
 	5. user sends the cookie with each request.
 	6. sever validates it against session store.
@@ -62,6 +62,7 @@ thereby causes an unwanted action.
 	8. when use logout, the token is cleared from user storage.
 
   Tokens are not stored in server sides.
+  Tokens are signed with a secret key
   Tokens can be opaque or self-contained
   Tokens exposed to XSS attacks, because they are in local storage, and local stroges are
     prone to js use, and they contain user information, but cookies can secure with flags like
