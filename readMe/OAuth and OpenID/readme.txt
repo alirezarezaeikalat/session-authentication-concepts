@@ -34,9 +34,10 @@ on their behalf. To make that happen, OAuth introduces another component into th
             
             --response_type=code--, (defines the --authorization grant-- or oauth flow, here the authorization grant is authorization code)
             --scope= -- : The client’s request can include an indication of what kind of access it’s looking for (known as the OAuth scope)
-            --client_id= --,
+            --client_id= --, (The authorization server gives the client the unique client id)
             --redirect_uri= --,
-            --state= --
+            --state= -- (This state is a random string that is generated at first by client app, and save it, untill the authorization server send request to callback url, 
+                        the client should save this state to prevent from sending request to token end point by just going to callback uri by hackers)
     
     b. This redirect to the browser causes the browser to send an HTTP GET to the authorization server endpoint:
 
@@ -66,7 +67,7 @@ on their behalf. To make that happen, OAuth introduces another component into th
 
 
 
-    f. Now that the client has the code, it can send it back to the authorization server on its --token endpoint--
+    f. Now that the client has the code, it can send it back to the authorization server on its --token endpoint-- to get the access and referesh token
 
         POST /token
         Host: localhost:9001
@@ -75,6 +76,7 @@ on their behalf. To make that happen, OAuth introduces another component into th
         Authorization: Basic b2F1dGgtY2xpZW50LTE6b2F1dGgtY2xpZW50LXNlY3JldC0x
         grant_type=authorization_code&
         redirect_uri=http%3A%2F%2Flocalhost%3A9000%2Fcallback&code=8V1pr0rJ
+
 
 
 
@@ -97,6 +99,160 @@ on their behalf. To make that happen, OAuth introduces another component into th
         “access_token”: “987tghjkiu6trfghjuytrghj”,
         “token_type”: “Bearer”
         }
+
+
+//////////////////////////////// Build simple OAuth client application //////////////////////
+
+5. Client and Authorization server need to know few thing about each other:
+
+        Client information: 
+        {
+            client_id:
+            client_secret:
+            scope:
+            redirect_uri:
+        }
+
+        Server information:
+        {
+            authorization_endpoint:
+            token_endpoint:
+        }
+
+6. When we click on the button in our client app for authorization, our client app redirect the user to authorization server:
+
+        app.get('/authorize', function(req, res){
+            var authorizeUrl = buildUrl(authServer.authorizationEndpoint, {
+            response_type: 'code',
+            client_id: client.client_id,
+            redirect_uri: client.redirect_uris[0]
+            });
+            res.redirect(authorizeUrl);
+        });
+
+7. When the authorization server authenticate the user, the authorization server redirects the user to /callback in client app:
+
+    app.get('/callback', function(req, res){
+        var code = req.query.code;
+        var form_data = qs.stringify({
+            grant_type: 'authorization_code',
+            code: code,
+            redirect_uri: client.redirect_uris[0]
+        });
+        var headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + encodeClientCredentials(client.client_id,
+                client.client_secret)
+        };
+        
+        var tokRes = request('POST', authServer.tokenEndpoint,
+            {
+                body: form_data,
+                headers: headers
+            }
+        );
+        res.render(‘index’, {access_token: body.access_token});
+    });
+
+        // The response is look like this:
+            {
+                "access_token": "987tghjkiu6trfghjuytrghj",
+                "token_type": "Bearer"
+            }
+
+8. The kind of OAuth access token that we have is known as a bearer token, which means that whoever holds the token can present it to the protected resource. The
+        OAuth Bearer Token Usage specification actually gives three ways to send the token value:
+            
+            a. As an HTTP Authorization header (prefred way)
+            b. As a form-encoded request body parameter
+            c. As a URL-encoded query parameter
+
+    to make request to resource server:
+
+        app.get('/fetch_resource', function(req, res){
+            if (!access_token) {
+                res.render('error', {error: 'Missing access token.'});
+                return;
+            }
+            var headers = {
+                'Authorization': 'Bearer ' + access_token
+            };
+            var resource = request('POST', protectedResource,
+                {headers: headers}
+            );
+        });
+
+9. If the access token is expired, we can use referesh token to get new access token (pay attention to grant_type):
+
+        var form_data = qs.stringify({
+            grant_type: 'refresh_token',
+            refresh_token: refresh_token
+        });
+        var headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + encodeClientCredentials(client.client_id,
+            client.client_secret)
+        };
+        var tokRes = request('POST', authServer.tokenEndpoint, {
+            body: form_data,
+            headers: headers
+        });
+
+////////////////////////// Build simple resource server /////////////////
+
+10. The only responsibility of resource server is to take the bearer token, validates it and return the resource.
+    since most of the times there are multiple urls that we must protect, we can use middleware to for different urls:
+
+        var getAccessToken = function(req, res, next) {
+            var inToken = null;
+
+            // token from header
+            var auth = req.headers['authorization'];
+            if (auth && auth.toLowerCase().indexOf('bearer') == 0) {
+                inToken = auth.slice('bearer '.length);
+            }
+            // token from form body
+            } else if (req.body && req.body.access_token) {
+                inToken = req.body.access_token;
+            } else if (req.query && req.query.access_token) {
+                inToken = req.query.access_token
+            }
+            // after parsing the token, we should validate it against datastore, in our example the resource server has access to the datastore of the 
+            // authorization server
+            nosql.one(function(token) {
+                if (token.access_token == inToken) {
+                    return token;
+                }
+            }, function(err, token) {
+                if (token) {
+                    console.log("We found a matching token: %s", inToken);
+                } else {
+                    console.log('No matching token was found.');
+                }
+                req.access_token = token;
+                next();
+                return;
+        });
+
+11. Then we can use this middleware in our actions
+
+12. What if your API isn’t serving static resources with a simple yes/no gateway in front of them? Many APIs are designed such that different actions on the API require
+    different access rights.
+
+    a. Different scopes for different actions:
+        
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

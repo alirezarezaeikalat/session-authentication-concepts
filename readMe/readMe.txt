@@ -105,7 +105,7 @@ thereby causes an unwanted action.
           - no user session stored on the server
           - revoked tokens have to be presisted
 
-    c. Sessions: 
+    c. Sessions (ok): 
           
           - sessions are presisted server side and linked to user by session ID
           - session ID is signed and stored in a cookie
